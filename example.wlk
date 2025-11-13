@@ -35,16 +35,14 @@ class Paciente{
     rutinaAsignada.forEach({a => self.usarAparato(a)})
   }
 
-  method rutinaCompleta(){
-    if(self.puedeHacerRutina()){
-        self.realizarRutina()
-    }
-  }
+  method rutinaCompleta()
 }
 
 class PacienteResistente inherits Paciente{
     override method rutinaCompleta(){
-        super()
+        if(self.puedeHacerRutina()){
+        self.realizarRutina()
+        }
         fortalezaM += rutinaAsignada.size()
     }
 }
@@ -66,7 +64,9 @@ class PacienteRapRecu inherits Paciente{
     var bajaDelDolor = 3
 
     override method rutinaCompleta(){
-        super()
+        if(self.puedeHacerRutina()){
+        self.realizarRutina()
+        }
         nivelDolor = (nivelDolor - bajaDelDolor).max(0)
     }
 
@@ -77,6 +77,7 @@ class PacienteRapRecu inherits Paciente{
 
 class Magneto{
     var color = "blanco"
+    var imantacion = 800
 
     method color() = color
 
@@ -88,11 +89,26 @@ class Magneto{
 
     method efectoDeUsar(unPaciente){
         unPaciente.efectoMagneto()
+        imantacion = (imantacion - 1).max(0)
+    }
+
+    method necesitaMantenimiento() =  imantacion < 100
+
+    method hacerMantenimiento(){
+        imantacion += 500
+    }
+
+    method mantenimiento(){
+        if(self.necesitaMantenimiento()){
+            self.hacerMantenimiento()
+        }
     }
 }
 
 class Bicicleta{
     var color = "blanco"
+    var cantTornillosFlojos = 0
+    var cantPerdidasAceite = 0
 
     method color() = color
 
@@ -103,7 +119,38 @@ class Bicicleta{
     method condicionUso(unPaciente) = unPaciente.edad() > 8
 
     method efectoDeUsar(unPaciente){
+        self.consecuencia(unPaciente)
         unPaciente.efectoBicicleta()
+    }
+
+    method consecuencia(unPaciente){
+        self.aflojarTornillos(unPaciente)
+        self.perderAceite(unPaciente)
+    }
+
+    method aflojarTornillos(unPaciente){
+        if(unPaciente.nivelDolor() > 30){
+            cantTornillosFlojos += 1
+        }
+    }
+
+    method perderAceite(unPaciente){
+        if(unPaciente.nivelDolor() > 30 and unPaciente.edad().between(30, 50)){
+            cantPerdidasAceite += 1
+        }
+    }
+
+    method necesitaMantenimiento() = cantTornillosFlojos >= 10 || cantPerdidasAceite >= 5
+
+    method hacerMantenimiento(){
+        cantPerdidasAceite = 0
+        cantTornillosFlojos = 0
+    }
+
+    method mantenimiento(){
+        if(self.necesitaMantenimiento()){
+            self.hacerMantenimiento()
+        }
     }
 }
 
@@ -121,4 +168,32 @@ class Minitramp{
     method efectoDeUsar(unPaciente){
         unPaciente.efectoMinitramp()
     }
+
+    method necesitaMantenimiento() = true
+    method hacerMantenimiento() {}
+
+    method mantenimiento(){
+        if(self.necesitaMantenimiento()){
+            self.hacerMantenimiento()
+        }
+    }
+}
+
+object centroKine{
+    const aparatos = #{}
+    const pacientes = #{}
+
+    method colorAparatos() = aparatos.map({a => a.color()})
+
+    method pacientesMenoresA8() = pacientes.filter({p => p.edad() < 8})
+
+    method cantPacientesRutFallida() = pacientes.filter({p => !p.puedeHacerRutina()}).size()
+
+    method estaEnOptimasCond() = aparatos.all({a => !a.necesitaMantenimiento()})
+
+    method aparatosEnMalEstado() = aparatos.filter({a => a.necesitaMantenimiento()})
+
+    method estaComplicado() = self.aparatosEnMalEstado().size() >= aparatos.size()/2
+
+    method visitaDeTecnico() = aparatos.forEach({a => a.mantenimiento()})
 }
